@@ -1,9 +1,7 @@
 package com.example.blackjackproject
 
-import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -12,20 +10,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.w3c.dom.Text
-import kotlin.math.absoluteValue
 
 class MainActivity : AppCompatActivity() {
 
     lateinit var playerResultView : TextView
+    lateinit var playerView1 : ImageView
     lateinit var dealerResultView : TextView
+    lateinit var dealerView1: ImageView
+    lateinit var dealerScoreView: TextView
     lateinit var cl : ConstraintLayout
     var deck = mutableListOf<Card>()
     var dealerHand = 0
     var playerHand = 0
-    var playerScore = 0
-    var dealerScore = 0
-
+    var playerScore :Int = 0
+    var dealerScore :Int = 0
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,14 +31,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         dealerResultView = findViewById(R.id.dealerResultView)
-        playerResultView = findViewById(R.id.playerResultView)
+        playerResultView = findViewById(R.id.pResultView)
         val hitButton = findViewById<Button>(R.id.hitButton)
         val stayButton = findViewById<Button>(R.id.stayButton)
-        val playerView1 = findViewById<ImageView>(R.id.playerView1)
-        val dealerView1 = findViewById<ImageView>(R.id.dealerView1)
-        val dealerScoreView = findViewById<TextView>(R.id.dealerScoreText)
-        val playerScoreView = findViewById<TextView>(R.id.playerScoreText)
-        var score = intent.getIntExtra("dealerScore", 0)
+        val restartButton = findViewById<Button>(R.id.RestartButton)
+        playerView1 = findViewById(R.id.playerView1)
+        dealerView1 = findViewById(R.id.dealerView1)
+        dealerScoreView = findViewById(R.id.dealerScoreText)
+
 
 
         cl = findViewById(R.id.constraint_Layout)
@@ -48,49 +46,84 @@ class MainActivity : AppCompatActivity() {
 
         createDeck()
         deck.shuffle()
-        backgroundColor()
+//        backgroundColor()
+
 
         hitButton.setOnClickListener {
-            val playerCard = deck.random()
-            playerView1.setImageResource(playerCard.image)
-            playerHand += playerCard.value
-            playerResultView.text = "$playerHand"
-            if (playerHand > 21) {
-                playerResultView.text = "BUST"
-                startActivity(intent)
-            } else if (playerHand == 21) {
-                playerResultView.text = "BLACKJACK!"
-
-            }
+            checkPlayerCard()
 
         }
         stayButton.setOnClickListener{
-            GlobalScope.launch(Dispatchers.Main) {
-                while (dealerHand <= 16) {
-                    val dealerCard = deck.random()
-                    dealerView1.setImageResource(dealerCard.image)
-                    dealerHand += dealerCard.value
-                    dealerResultView.text = "$dealerHand"
-                    delay(500)
-                }
+            dealerGenerator()
+        }
+        restartButton.setOnClickListener{
+            val intent = intent
+            finish()
+            startActivity(intent)
+        }
+
+    }
+
+
+    fun checkPlayerCard(){
+        val playerCard = deck.random()
+        playerView1.setImageResource(playerCard.image)
+        playerHand += playerCard.value
+        playerResultView.text = "$playerHand"
+        if (playerHand > 21) {
+            playerResultView.text = "BUST"
+            dealerScoreView.text = "DEALER WIN"
+        } else if (playerHand == 21) {
+            playerResultView.text = "BLACKJACK!"
+            dealerScoreView.text = "PLAYER WIN"
+
+        }
+    }
+    fun dealerGenerator(){
+        GlobalScope.launch(Dispatchers.Main) {
+            while (dealerHand <= 16) {
+                val dealerCard = deck.random()
+                dealerView1.setImageResource(dealerCard.image)
+                dealerHand += dealerCard.value
+                dealerResultView.text = "$dealerHand"
+                delay(500)
                 if (dealerHand > 21) {
                     dealerResultView.text = "BUST"
+                    dealerScoreView.text = "PLAYER WIN"
 
                 } else if (dealerHand == 21) {
-                    dealerResultView.text = "$dealerHand BLACKJACK!"
-                } else if (dealerHand > playerHand) {
-                    dealerScore ++
-                    dealerScoreView.text = "Dealer Score: $dealerScore"
+                    dealerResultView.text = "BLACKJACK"
+                    dealerScoreView.text = "DEALER WIN"
+                }else if (dealerHand >= 17) {
+                    if (dealerHand > playerHand) {
+                        dealerScoreView.text = "DEALER WIN"
+                    }else if (dealerHand == playerHand) {
+                        dealerScoreView.text = "DRAW"
+                    }else{
+                        dealerScoreView.text = "PLAYER WIN"
+                    }
                 }
             }
         }
-//        if (dealerHand > playerHand) {
-//            playerResultView.text = "Dealer Won!"
-//        }else if (dealerHand < playerHand){
-//            dealerResultView.text = "Player Won!"
-//        }else "DRAW"
-
     }
+
+//    override fun onSaveInstanceState(outState: Bundle) {
+//        super.onSaveInstanceState(outState)
+//        val dealerNumber = dealerScore
+//        outState.putInt("savedInt", dealerNumber)
+//
+//    }
+//
+//    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+//        super.onRestoreInstanceState(savedInstanceState)
+//
+//            val dealerInt = savedInstanceState.getInt("savedInt", 0)
+//            dealerScore = dealerInt
+//            dealerScoreView.text = dealerScore.toString()
+//
+//    }
+
+
     fun createDeck() {
         val card1 = Card(R.drawable.heart1, value = 11)
         val card2 = Card(R.drawable.heart2, value = 2)
@@ -121,26 +154,7 @@ class MainActivity : AppCompatActivity() {
         deck.add(cardking3)
 
     }
-    fun backgroundColor() {
-        cl.setBackgroundResource(R.color.teal_200)
-    }
-    fun draw(){
-
-    }
-//    fun dealerSumHit(): Int {
-//        val dealerHand = deck[0].value + deck[1].value + deck[4].value
-//        return dealerHand
-//    }
-//    fun dealerSumStay(): Int {
-//        val dealerHandStay = deck[0].value + deck[1].value
-//        return dealerHandStay
-//    }
-//    fun playerSumStay(): Int {
-//        val playerHand = deck[2].value + deck[3].value
-//        return playerHand
-//    }
-//    fun playerSumHit(): Int {
-//        val playerHand = deck[2].value + deck[3].value + deck[5].value
-//        return playerHand
+//    fun backgroundColor() {
+//        cl.setBackgroundResource(R.color.teal_200)
 //    }
 }
